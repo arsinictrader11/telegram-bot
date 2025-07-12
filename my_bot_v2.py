@@ -4,6 +4,7 @@ from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
+# التوكن من متغير بيئة Render
 TOKEN = os.environ.get("BOT_TOKEN")
 WEBHOOK_URL = f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"
 
@@ -24,19 +25,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
-# أمر /help
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أرسل /start لتجربة البوت.")
-
+# إضافة أمر /start
 application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("help", help_command))
 
-# هذه فقط لتأكيد أن السيرفر يعمل لـ Render
 @app.route("/")
-def home():
-    return "✅ Bot is alive!"
+def index():
+    return "Bot is alive!"
 
-# استقبال الرسائل من Telegram
 @app.route(f"/{TOKEN}", methods=["POST"])
 async def webhook():
     data = request.get_json(force=True)
@@ -49,12 +44,11 @@ async def webhook():
     await application.process_update(update)
     return "OK"
 
-# إعداد الـ Webhook
 if __name__ == "__main__":
     async def main():
         await application.initialize()
         await application.bot.set_webhook(url=WEBHOOK_URL)
         await application.start()
-        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+        app.run(host="0.0.0.0", port=10000)
 
     asyncio.run(main())
