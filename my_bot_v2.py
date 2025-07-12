@@ -1,23 +1,16 @@
 import os
 import logging
-import asyncio
-from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # إعداد التوكن
 TOKEN = os.environ.get("BOT_TOKEN")
-WEBHOOK = f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"
 
-# تسجيل الأخطاء
+# إعداد سجل الأخطاء
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-
-# إنشاء Flask
-app = Flask(__name__)
-application = Application.builder().token(TOKEN).build()
 
 # أمر /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -33,39 +26,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
-# إضافة أوامر
-application.add_handler(CommandHandler("start", start))
+# أمر /help
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("أرسل /start لتجربة البوت.")
 
-# صفحة الفحص الرئيسية
-@app.route("/")
-def index():
-    return "✅ Bot is running!"
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
 
-# Webhook endpoint
-@app.route(f"/{TOKEN}", methods=["POST"])
-async def webhook():
-    data = request.get_json(force=True)
-    update = Update.de_json(data, application.bot)
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
 
-    # التأكد من تشغيل التطبيق
-    if not application.running:
-        await application.initialize()
-        await application.start()
+    print("✅ البوت يعمل الآن... (Polling mode)")
 
-    await application.process_update(update)
-    return "OK"
+    app.run_polling()
 
-# تشغيل التطبيق
 if __name__ == "__main__":
-    async def main():
-        await application.initialize()
-        await application.bot.set_webhook(url=WEBHOOK)
-        await application.start()
-        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-    try:
-        asyncio.run(main())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(main())
+    main()
