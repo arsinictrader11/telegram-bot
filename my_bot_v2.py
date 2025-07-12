@@ -1,11 +1,11 @@
 import os
+import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import logging
 
 # إعداد التوكن
 TOKEN = os.environ.get("BOT_TOKEN")
-WEBHOOK = f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"
+WEBHOOK = f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"  # عدل الرابط حسب رابطك على Render
 
 # تسجيل الأخطاء
 logging.basicConfig(
@@ -34,15 +34,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # الأوامر
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
 
-    print("✅ البوت يعمل الآن...")
+    print("✅ البوت يعمل الآن على Webhook...")
 
+    # تشغيل Webhook
     app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url=WEBHOOK
+        webhook_url=WEBHOOK,
+        allowed_updates=["message", "edited_message"]  # اختياري لتحديد نوع التحديثات
     )
 
 if __name__ == "__main__":
