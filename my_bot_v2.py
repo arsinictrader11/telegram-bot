@@ -1,5 +1,3 @@
-# تحديث طفيف لإجبار Render على إعادة النشر
-
 import os
 import asyncio
 from flask import Flask, request
@@ -35,6 +33,10 @@ def index():
 @app.route(f"/{TOKEN}", methods=["POST"])
 async def webhook():
     data = request.get_json(force=True)
+
+    # ✅ طباعة البيانات القادمة من Telegram لفحصها
+    print("🚀 Received data from Telegram:", data)
+
     update = Update.de_json(data, application.bot)
 
     if not application.running:
