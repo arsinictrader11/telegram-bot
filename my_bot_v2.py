@@ -1,8 +1,14 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import os
+import asyncio
+from flask import Flask, request
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 TOKEN = os.environ.get("BOT_TOKEN")
+WEBHOOK_URL = f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"
+
+app = Flask(__name__)
+application = Application.builder().token(TOKEN).build()
 
 # أمر /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -18,22 +24,37 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
+# أمر /help
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("أرسل /start لتجربة البوت.")
 
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("help", help_command))
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
+# هذه فقط لتأكيد أن السيرفر يعمل لـ Render
+@app.route("/")
+def home():
+    return "✅ Bot is alive!"
 
-    print("✅ البوت يعمل الآن... جاهز لاستقبال الأوامر.")
+# استقبال الرسائل من Telegram
+@app.route(f"/{TOKEN}", methods=["POST"])
+async def webhook():
+    data = request.get_json(force=True)
+    update = Update.de_json(data, application.bot)
 
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.environ.get("PORT", 10000)),
-        webhook_url=f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"
-    )
+    if not application.running:
+        await application.initialize()
+        await application.start()
 
+    await application.process_update(update)
+    return "OK"
+
+# إعداد الـ Webhook
 if __name__ == "__main__":
-    main()
+    async def main():
+        await application.initialize()
+        await application.bot.set_webhook(url=WEBHOOK_URL)
+        await application.start()
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
+    asyncio.run(main())
