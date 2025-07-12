@@ -4,9 +4,11 @@ from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
+# إعداد التوكن من متغير بيئة في Render
 TOKEN = os.environ.get("BOT_TOKEN")
 WEBHOOK_URL = f"https://telegram-bot-oj6w.onrender.com/{TOKEN}"
 
+# إعداد تطبيق Flask
 app = Flask(__name__)
 application = Application.builder().token(TOKEN).build()
 
@@ -24,19 +26,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
+# إضافة الأمر للبوت
 application.add_handler(CommandHandler("start", start))
 
+# صفحة البداية
 @app.route("/")
 def index():
-    return "Bot is alive!"
+    return "Bot is running!"
 
+# المسار الخاص بالـ Webhook
 @app.route(f"/{TOKEN}", methods=["POST"])
 async def webhook():
     data = request.get_json(force=True)
-
-    # ✅ طباعة البيانات القادمة من Telegram لفحصها
-    print("🚀 Received data from Telegram:", data)
-
     update = Update.de_json(data, application.bot)
 
     if not application.running:
@@ -46,6 +47,7 @@ async def webhook():
     await application.process_update(update)
     return "OK"
 
+# إعداد وتشغيل التطبيق
 if __name__ == "__main__":
     async def main():
         await application.initialize()
